@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Interativo - Engenharia de Produção - Universo URI 2025</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700&display=swap');
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background: linear-gradient(135deg, #1a0033, #2a004d);
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: #00ffff;
+            text-shadow: 1px 1px 3px #00ffff;
+            margin-bottom: 20px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        @keyframes glow {
+            from { text-shadow: 1px 1px 3px #00ffff; }
+            to { text-shadow: 2px 2px 6px #00ffff, -2px -2px 6px #ff00ff; }
+        }
+        h1, h2 {
+            color: #ff69b4;
+            text-shadow: 1px 1px 3px #ff69b4;
+            font-size: 20px;
+        }
+        input {
+            padding: 12px;
+            margin: 10px;
+            border: 2px solid #00ffff;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            width: 80%;
+            outline: none;
+            transition: all 0.3s;
+            font-family: 'Exo 2', sans-serif;
+        }
+        input:focus {
+            border-color: #ff69b4;
+            box-shadow: 0 0 10px #ff69b4;
+        }
+        button {
+            background: linear-gradient(45deg, #00ffff, #ff69b4);
+            color: #fff;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: 700;
+            transition: transform 0.3s;
+            font-family: 'Exo 2', sans-serif;
+        }
+        button:hover {
+            transform: scale(1.1);
+        }
+        .question {
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        .option {
+            display: block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            margin: 6px 0;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-family: 'Exo 2', sans-serif;
+        }
+        .option:hover {
+            background: rgba(255, 105, 180, 0.3);
+        }
+        .feedback {
+            font-weight: 700;
+            margin: 10px 0;
+            animation: bounce 0.5s;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .correct { color: #00ff00; text-shadow: 1px 1px 3px #00ff00; }
+        .incorrect { color: #ff4500; text-shadow: 1px 1px 3px #ff4500; }
+        .hidden { display: none; }
+        .decoration {
+            position: absolute;
+            font-size: 40px;
+            opacity: 0.5;
+        }
+        .decoration-1 { top: 10px; left: 10px; }
+        .decoration-2 { bottom: 10px; right: 10px; transform: rotate(45deg); }
+        .error-message {
+            color: #ff69b4;
+            text-shadow: 1px 1px 3px #ff69b4;
+            margin: 10px 0;
+        }
+        .final-info {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 10px 0;
+            text-shadow: 1px 1px 3px #00ffff;
+        }
+        .final-score {
+            font-size: 40px;
+            font-weight: 700;
+            margin: 20px 0;
+            color: #ff69b4;
+            text-shadow: 1px 1px 3px #ff69b4;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            display: inline-block;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ffff, #ff69b4);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        .stage-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+        .stage-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s;
+        }
+        .stage-dot.active {
+            background: #00ffff;
+            box-shadow: 0 0 10px #00ffff;
+        }
+        .stage-dot.completed {
+            background: #ff69b4;
+            box-shadow: 0 0 10px #ff69b4;
+        }
+        .saving-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1a0033, #2a004d);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            font-size: 18px;
+            z-index: 1000;
+            display: none;
+            border: 2px solid #00ffff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            text-align: center;
+        }
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #00ffff;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Estilos específicos para impressão/captura */
+        .capture-mode {
+            padding: 40px !important;
+            max-width: none !important;
+            min-height: auto !important;
+        }
+        
+        .capture-mode .decoration {
+            opacity: 0.8 !important;
+        }
+        
+        .capture-mode button {
+            display: none !important;
+        }
+        
+        .capture-mode .logo {
+            animation: none !important;
+            text-shadow: 2px 2px 6px #00ffff, -2px -2px 6px #ff00ff !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="main-container">
+        <div class="logo">🌌 Universo URI 2025 - Engenharia de Produção ✨</div>
+        <div class="decoration decoration-1">💡</div>
+        <div class="decoration decoration-2">🔧</div>
+        
+        <!-- Tela Inicial -->
+        <div id="start-screen">
+            <h1>Bem-vindo ao Quiz Cósmico! 🚀</h1>
+            <p>Insira seus dados para embarcar nessa aventura estelar!</p>
+            <input type="text" id="player-name" placeholder="Seu Nome">
+            <input type="text" id="player-school" placeholder="Sua Escola">
+            <button onclick="startQuiz()">Partir para o Espaço! 🌠</button>
+        </div>
+        
+        <!-- Etapas do Quiz -->
+        <div id="quiz" class="hidden">
+            <h2 id="stage-title"></h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="stage-indicator">
+                <div class="stage-dot" id="stage-1"></div>
+                <div class="stage-dot" id="stage-2"></div>
+                <div class="stage-dot" id="stage-3"></div>
+                <div class="stage-dot" id="stage-4"></div>
+            </div>
+            <div id="question-container"></div>
+            <div id="feedback"></div>
+            <button id="next-question" class="hidden" onclick="nextQuestion()">Próxima Missão! 🌌</button>
+        </div>
+        
+        <!-- Tela de Placar de Etapa -->
+        <div id="stage-score" class="hidden">
+            <h2>Placar Estelar da Etapa 🌟</h2>
+            <p id="stage-score-text"></p>
+            <div id="riddle"></div>
+            <div id="code-input" class="hidden">
+                <input type="text" id="unlock-code" placeholder="Insira o Código Secreto">
+                <button onclick="checkCode()">Desbloquear Nova Dimensão! 🚪</button>
+                <div id="error-message" class="error-message hidden"></div>
+            </div>
+        </div>
+        
+        <!-- Tela Final -->
+        <div id="final-screen" class="hidden">
+            <h1>Parabéns, Viajante Estelar! 🎉</h1>
+            <div class="final-info">@engproduri</div>
+            <div class="final-info">Nome: <span id="final-name"></span></div>
+            <div class="final-info">Escola: <span id="final-school"></span></div>
+            <div class="final-score">Pontuação Final: <span id="final-score"></span></div>
+            <div class="final-info">Tempo Total: <span id="final-time"></span> segundos</div>
+            <div class="final-info">Data: <span id="final-date"></span></div>
+            <div style="margin-top: 30px;" class="action-buttons">
+                <button onclick="saveAsImage()">Salvar 📸</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="saving-message" id="saving-message">
+        <div>Preparando sua imagem estelar...</div>
+        <div class="loading-spinner"></div>
+        <div style="font-size: 14px; margin-top: 10px;">Aguarde um momento ✨</div>
+    </div>
+
+    <script>
+        let playerName = '';
+        let playerSchool = '';
+        let startTime;
+        let totalTime;
+        let currentStage = 1;
+        let currentQuestion = 0;
+        let stageScore = 0;
+        let totalScore = 0;
+        let answered = false;
+
+        const stages = [
+            {
+                title: 'Parte 1 – Fundamentos da área',
+                questions: [
+                    {
+                        question: 'A Engenharia de Produção surgiu principalmente em função de qual revolução histórica?',
+                        options: ['a) Revolução Francesa', 'b) Revolução Industrial', 'c) Revolução Russa', 'd) Revolução Tecnológica'],
+                        correct: 1
+                    },
+                    {
+                        question: 'O que significa o conceito de produção enxuta (Lean Manufacturing)?',
+                        options: ['a) Produzir mais com mais recursos', 'b) Reduzir desperdícios e aumentar eficiência', 'c) Aumentar estoques para segurança', 'd) Focar apenas em automação'],
+                        correct: 1
+                    },
+                    {
+                        question: 'Qual é o principal objetivo do método Six Sigma?',
+                        options: ['a) Aumentar o tempo de produção', 'b) Reduzir a variabilidade e defeitos nos processos', 'c) Aumentar os custos de operação', 'd) Substituir trabalhadores por máquinas'],
+                        correct: 1
+                    },
+                    {
+                        question: 'No Brasil, a Engenharia de Produção é regulamentada por qual entidade?',
+                        options: ['a) CREA', 'b) OAB', 'c) CFM', 'd) CONFEA/CREA'],
+                        correct: 3
+                    },
+                    {
+                        question: 'Entre as seguintes áreas, qual não é tradicionalmente um campo de atuação da Engenharia de Produção?',
+                        options: ['a) Logística', 'b) Planejamento e Controle da Produção (PCP)', 'c) Gestão da Qualidade', 'd) Cirurgia cardiovascular'],
+                        correct: 3
+                    }
+                ],
+                code: 'Qz8!rK2$wL9#',
+                riddle: 'Onde o futuro é moldado com camadas de criatividade, busque o segredo entre formas que ganham vida!'
+            },
+            {
+                title: 'Parte 2 – Estatísticas e mercado',
+                questions: [
+                    {
+                        question: 'Qual é o salário médio aproximado de um Engenheiro de Produção em Porto Alegre, RS?',
+                        options: ['a) R$ 3.500', 'b) R$ 8.800', 'c) R$ 15.600', 'd) R$ 20.000'],
+                        correct: 1
+                    },
+                    {
+                        question: 'No Brasil, quantos engenheiros (todas as modalidades) se formaram em 2023?',
+                        options: ['a) 50 mil', 'b) 95 mil', 'c) 150 mil', 'd) 200 mil'],
+                        correct: 1
+                    },
+                    {
+                        question: 'Qual é o percentual de engenheiros brasileiros empregados após a formatura?',
+                        options: ['a) 50%', 'b) 65%', 'c) 78%', 'd) 92%'],
+                        correct: 3
+                    },
+                    {
+                        question: 'Nos EUA, quantos engenheiros industriais estavam empregados em 2022?',
+                        options: ['a) 120.000', 'b) 327.300', 'c) 500.000', 'd) 1.000.000'],
+                        correct: 1
+                    },
+                    {
+                        question: 'A previsão de crescimento do emprego para engenheiros industriais nos EUA entre 2024-2034 é de:',
+                        options: ['a) 3%', 'b) 7%', 'c) 11%', 'd) 20%'],
+                        correct: 2
+                    }
+                ],
+                code: 'tM4^G7p@X1&h',
+                riddle: 'Onde braços dançam com precisão silenciosa, o enigma aguarda entre os movimentos que constroem o futuro!'
+            },
+            {
+                title: 'Parte 3 – Gestão e processos',
+                questions: [
+                    {
+                        question: 'O tempo de ciclo em um processo produtivo se refere a:',
+                        options: ['a) Tempo total para fabricar um produto', 'b) Número de funcionários em uma linha', 'c) Quantidade de produtos rejeitados', 'd) Tempo de manutenção de máquinas'],
+                        correct: 0
+                    },
+                    {
+                        question: 'O que é logística reversa?',
+                        options: ['a) Transporte aéreo internacional', 'b) Movimentação de produtos de volta ao ciclo produtivo (reuso/reciclagem)', 'c) Fluxo de produção em ordem inversa', 'd) Expedição de cargas urgentes'],
+                        correct: 1
+                    },
+                    {
+                        question: 'O método Just in Time (JIT) busca:',
+                        options: ['a) Produzir somente o necessário, na hora certa', 'b) Aumentar estoques de segurança', 'c) Reduzir custos com mão de obra qualificada', 'd) Produzir em grandes lotes'],
+                        correct: 0
+                    },
+                    {
+                        question: 'Um layout celular em uma fábrica é caracterizado por:',
+                        options: ['a) Máquinas agrupadas por tipo de processo', 'b) Produtos em linha de montagem rígida', 'c) Grupos de máquinas dispostos para produzir famílias de produtos', 'd) Estoques centralizados próximos à produção'],
+                        correct: 2
+                    },
+                    {
+                        question: 'OEE (Overall Equipment Effectiveness) mede:',
+                        options: ['a) Eficiência global de equipamentos', 'b) Custos totais de manutenção', 'c) Quantidade de estoques de segurança', 'd) Taxa de acidentes de trabalho'],
+                        correct: 0
+                    }
+                ],
+                code: 'Zf6*eR9!yB3%',
+                riddle: 'Onde peças se unem como um quebra-cabeça vivo, o mistério repousa entre blocos que inspiram construção!'
+            },
+            {
+                title: 'Parte 4 – Inovação e sustentabilidade',
+                questions: [
+                    {
+                        question: 'No Brasil, qual porcentagem de empresas industriais já usa pelo menos uma tecnologia digital da Indústria 4.0?',
+                        options: ['a) 25%', 'b) 40%', 'c) 69%', 'd) 90%'],
+                        correct: 2
+                    },
+                    {
+                        question: 'Segundo pesquisas internacionais, qual porcentagem dos projetos de Indústria 4.0 falham em ultrapassar a fase piloto?',
+                        options: ['a) 20%', 'b) 40%', 'c) 55%', 'd) 70%'],
+                        correct: 3
+                    },
+                    {
+                        question: 'A economia circular está diretamente relacionada a:',
+                        options: ['a) Produção linear', 'b) Reutilização, reciclagem e prolongamento do ciclo de vida dos produtos', 'c) Aumento de consumo de matérias-primas', 'd) Automação de processos industriais'],
+                        correct: 1
+                    },
+                    {
+                        question: 'Entre as tecnologias da Indústria 4.0, qual já é usada por 46% das empresas na Alemanha?',
+                        options: ['a) Impressão 3D', 'b) Internet das Coisas (IoT)', 'c) Realidade Aumentada', 'd) Robôs colaborativos'],
+                        correct: 1
+                    },
+                    {
+                        question: 'Uma das funções mais estratégicas do Engenheiro de Produção é:',
+                        options: ['a) Programar softwares', 'b) Integrar pessoas, processos e tecnologia para aumentar competitividade', 'c) Executar cálculos estruturais', 'd) Substituir gestores administrativos'],
+                        correct: 1
+                    }
+                ]
+            }
+        ];
+
+        function startQuiz() {
+            playerName = document.getElementById('player-name').value;
+            playerSchool = document.getElementById('player-school').value;
+            if (!playerName || !playerSchool) {
+                alert('Ops! Preencha seu nome e escola para decolar! 🚀');
+                return;
+            }
+            startTime = Date.now();
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz').classList.remove('hidden');
+            updateStageIndicators();
+            loadStage();
+        }
+
+        function updateStageIndicators() {
+            for (let i = 1; i <= 4; i++) {
+                const dot = document.getElementById(`stage-${i}`);
+                if (i < currentStage) {
+                    dot.classList.add('completed');
+                } else if (i === currentStage) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active', 'completed');
+                }
+            }
+        }
+
+        function updateProgressBar() {
+            const progress = ((currentStage - 1) * 5 + currentQuestion) / 20 * 100;
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+        }
+
+        function loadStage() {
+            const stage = stages[currentStage - 1];
+            document.getElementById('stage-title').innerText = stage.title;
+            currentQuestion = 0;
+            stageScore = 0;
+            updateProgressBar();
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const stage = stages[currentStage - 1];
+            const q = stage.questions[currentQuestion];
+            let html = `<div class="question">${q.question}</div>`;
+            q.options.forEach((opt, idx) => {
+                html += `<div class="option" onclick="answerQuestion(${idx})">${opt}</div>`;
+            });
+            document.getElementById('question-container').innerHTML = html;
+            document.getElementById('feedback').innerHTML = '';
+            document.getElementById('next-question').classList.add('hidden');
+            answered = false;
+            updateProgressBar();
+        }
+
+        function answerQuestion(selected) {
+            if (answered) return;
+            answered = true;
+            const stage = stages[currentStage - 1];
+            const q = stage.questions[currentQuestion];
+            const feedback = document.getElementById('feedback');
+            if (selected === q.correct) {
+                feedback.innerHTML = '<span class="correct">Boa, acerto estelar! 🎉 Você é um gênio da engenharia!</span>';
+                stageScore++;
+            } else {
+                feedback.innerHTML = `<span class="incorrect">Quase lá, aventureiro! 😄 A resposta certa é: ${q.options[q.correct]}</span>`;
+            }
+            document.getElementById('next-question').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            const stage = stages[currentStage - 1];
+            if (currentQuestion < stage.questions.length) {
+                loadQuestion();
+            } else {
+                showStageScore();
+            }
+        }
+
+        function showStageScore() {
+            totalScore += stageScore;
+            const percentage = (stageScore / 5) * 100;
+            document.getElementById('quiz').classList.add('hidden');
+            document.getElementById('stage-score').classList.remove('hidden');
+            document.getElementById('stage-score-text').innerText = `Acertos: ${stageScore}/5 (${percentage.toFixed(0)}%) - Você brilhou como uma estrela! 🌟`;
+            if (currentStage < 4) {
+                const riddleText = stages[currentStage - 1].riddle;
+                document.getElementById('riddle').innerHTML = `<p><strong>Charada Cósmica:</strong> ${riddleText}</p>`;
+                document.getElementById('code-input').classList.remove('hidden');
+                document.getElementById('unlock-code').value = '';
+                document.getElementById('error-message').classList.add('hidden');
+            } else {
+                endQuiz();
+            }
+        }
+
+        function checkCode() {
+            const inputCode = document.getElementById('unlock-code').value;
+            const correctCode = stages[currentStage - 1].code;
+            if (inputCode === correctCode) {
+                currentStage++;
+                updateStageIndicators();
+                document.getElementById('stage-score').classList.add('hidden');
+                document.getElementById('quiz').classList.remove('hidden');
+                loadStage();
+            } else {
+                document.getElementById('error-message').innerText = 'Código errado, aventureiro! Tente novamente com outro segredo estelar! 🌠';
+                document.getElementById('error-message').classList.remove('hidden');
+                document.getElementById('unlock-code').value = '';
+            }
+        }
+
+        function endQuiz() {
+            totalTime = Math.floor((Date.now() - startTime) / 1000);
+            const totalPercentage = (totalScore / 20) * 100;
+            document.getElementById('stage-score').classList.add('hidden');
+            document.getElementById('final-screen').classList.remove('hidden');
+            updateFinalDetails(totalPercentage);
+        }
+
+        function updateFinalDetails(percentage) {
+            document.getElementById('final-name').innerText = playerName;
+            document.getElementById('final-school').innerText = playerSchool;
+            document.getElementById('final-score').innerText = `${totalScore}/20 (${percentage.toFixed(0)}%)`;
+            document.getElementById('final-time').innerText = totalTime;
+            
+            // Adicionar a data atual
+            const currentDate = new Date();
+            const formattedDate = currentDate.toLocaleDateString('pt-BR');
+            document.getElementById('final-date').innerText = formattedDate;
+        }
+
+        async function saveAsImage() {
+            try {
+                // Mostrar mensagem de carregamento
+                const savingMessage = document.getElementById('saving-message');
+                savingMessage.style.display = 'block';
+                
+                // Aguardar um momento para o usuário ver a mensagem
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                const element = document.getElementById('main-container');
+                const originalBodyOverflow = document.body.style.overflow;
+                const originalBodyHeight = document.body.style.height;
+                
+                // Preparar o elemento para captura
+                element.classList.add('capture-mode');
+                document.body.style.overflow = 'visible';
+                document.body.style.height = 'auto';
+                
+                // Configurações melhoradas para html2canvas
+                const canvas = await html2canvas(element, {
+                    backgroundColor: '#1a0033', // Cor de fundo sólida
+                    scale: 2, // Maior resolução
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: false,
+                    width: element.scrollWidth,
+                    height: element.scrollHeight,
+                    scrollX: 0,
+                    scrollY: 0,
+                    windowWidth: element.scrollWidth,
+                    windowHeight: element.scrollHeight,
+                    removeContainer: false,
+                    letterRendering: true,
+                    imageTimeout: 15000,
+                    onclone: function(clonedDoc) {
+                        // Garantir que as fontes sejam carregadas no clone
+                        const clonedElement = clonedDoc.getElementById('main-container');
+                        if (clonedElement) {
+                            clonedElement.classList.add('capture-mode');
+                        }
+                    }
+                });
+                
+                // Restaurar estilos originais
+                element.classList.remove('capture-mode');
+                document.body.style.overflow = originalBodyOverflow;
+                document.body.style.height = originalBodyHeight;
+                
+                // Criar o nome do arquivo com timestamp
+                const timestamp = new Date().toLocaleString('pt-BR').replace(/[/:]/g, '-').replace(',', '_');
+                const fileName = `Quiz_URI_${playerName.replace(/\s+/g, '_')}_${timestamp}.png`;
+                
+                // Converter para blob e criar URL
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    
+                    // Criar e simular clique no link de download
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = url;
+                    link.style.display = 'none';
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Limpar a URL do objeto após um tempo
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    
+                    // Esconder mensagem de salvamento
+                    savingMessage.style.display = 'none';
+                    
+                    // Mostrar confirmação de sucesso
+                    setTimeout(() => {
+                        alert('🎉 Imagem salva com sucesso! Compartilhe seu resultado estelar! ✨');
+                    }, 200);
+                    
+                }, 'image/png', 0.95); // Qualidade alta (95%)
+                
+            } catch (error) {
+                console.error('Erro ao salvar imagem:', error);
+                document.getElementById('saving-message').style.display = 'none';
+                
+                // Remover classe de captura em caso de erro
+                document.getElementById('main-container').classList.remove('capture-mode');
+                
+                alert('😢 Ocorreu um erro ao salvar a imagem. Tente novamente ou use a função de screenshot do seu navegador.');
+            }
+        }
+
+        // Prevenção de erros relacionados a fontes
+        document.fonts.ready.then(() => {
+            console.log('Fontes carregadas com sucesso');
+        }).catch(err => {
+            console.warn('Erro ao carregar fontes:', err);
+        });
+
+        // Função auxiliar para verificar se o html2canvas está disponível
+        function isHtml2CanvasReady() {
+            return typeof html2canvas !== 'undefined';
+        }
+
+        // Aguardar carregamento completo da página
+        window.addEventListener('load', () => {
+            if (!isHtml2CanvasReady()) {
+                console.warn('html2canvas não foi carregado corretamente');
+            }
+        });
+
+        // Função alternativa de captura para casos de falha
+        function fallbackSave() {
+            alert('💡 Dica: Use Ctrl+Shift+S (ou Cmd+Shift+S no Mac) para capturar a tela, ou clique com o botão direito e selecione "Inspecionar elemento" > "Console" > digite: window.print() para imprimir a página.');
+        }
+
+        // Melhorar a experiência em dispositivos móveis
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Ajustar comportamento para mobile
+        if (isMobileDevice()) {
+            // Adicionar evento de toque para melhor responsividade
+            document.addEventListener('touchstart', function() {}, {passive: true});
+        }
+    </script>
+</body>
+</html>
